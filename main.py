@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import random
+import sys
 
 class Colors:
     def __init__(self):
@@ -17,8 +18,8 @@ class Colors:
         self.SNAKE = (56, 129, 89)
         self.SNAKE2 = (63, 143, 99)
         self.BACKGROUND = self.BOARD_ALT0 #(5, 46, 34)
-        self.APPLE = (172, 195, 64)
-        self.MOUSE = (145, 165, 52)
+        self.APPLE = (237, 80, 80)
+        self.MOUSE = (78, 110, 160)
 
 class Mouse:
     def __init__(self, window):
@@ -31,6 +32,10 @@ class Mouse:
 
     def place(self):
         pygame.draw.rect(self.window, self.Colors.MOUSE, (self.posX, self.posY, self.width, self.height))
+
+    def resetPosition(self):
+        self.posX = -33
+        self.posY = -33
 
     def position(self):
         self.posX = random.randint(0, 19)*33
@@ -48,11 +53,10 @@ class Apple:
     def place(self):
         pygame.draw.rect(self.window, self.Colors.APPLE, (self.posX, self.posY, self.width, self.height))
 
-    def make(self):
+    def position(self):
         self.posX = random.randint(0, 19)*33
         self.posY = random.randint(0, 14)*33
         
-
 class Snake:
     def __init__(self, window):
         self.posX = 330
@@ -149,6 +153,7 @@ class Game:
         self.Snek = Snake(self.Window)
         self.Apple = Apple(self.Window)
         self.Mouse = Mouse(self.Window)
+        self.MouseCounter = 0
         self.ApplesCounter = 0
         self.Score = 0
         self.Timer = 0
@@ -174,6 +179,7 @@ class Game:
         for event in pygame.event.get():
             if event.type == QUIT:
                     pygame.quit()
+                    sys.exit()
             if event.type == KEYDOWN:
                 if event.key == K_RIGHT and self.lastKeyPressed != K_RIGHT:
                     if self.lastKeyPressed == K_LEFT:
@@ -201,6 +207,7 @@ class Game:
                         self.lastKeyPressed = K_UP
                 if event.key == K_r:
                     self.Restart()
+
 
     def Restart(self):
         self.Snek.kill()
@@ -231,7 +238,6 @@ class Game:
         Score = scoreFont.render(f'Score: {self.Score}', True, self.Colors.WHITE)
         self.Window.blit(Score, (0, 496))
         
-
     def initGame(self):
         self.UpdateScore()
         self.Snek.make()
@@ -246,9 +252,9 @@ class Game:
             #print(f'Snek X: {self.Snek.posX} | Snek Y: {self.Snek.posY}')
             #print(f'Apple X: {self.Apple.posX} | Apple Y: {self.Apple.posY}')
             if self.ApplesCounter == 0:
-                self.Apple.make()
+                self.Apple.position()
                 while (self.Apple.posX, self.Apple.posY, 32, 32) in self.Snek.sizeArray:
-                    self.Apple.make()
+                    self.Apple.position()
                 self.Apple.place()
                 self.ApplesCounter += 1
             if self.Snek.posX == self.Apple.posX and self.Snek.posY == self.Apple.posY:
@@ -257,10 +263,21 @@ class Game:
                 self.UpdateScore()
                 self.Snek.speed = 1-self.Score/1000
                 self.ApplesCounter = 0
+            if self.Score%100 == 0 and self.MouseCounter == 0:
+                self.Mouse.position()
+                while (self.Mouse.posX, self.Mouse.posY, 32, 32) in self.Snek.sizeArray or (self.Mouse.posX, self.Mouse.posY, 32, 32) == (self.Apple.posX, self.Apple.posY, 32, 32):
+                    self.Mouse.position()
+                self.Mouse.place()
+                self.MouseCounter += 1
+            if self.Snek.posX == self.Mouse.posX and self.Snek.posY == self.Mouse.posY:
+                self.Mouse.resetPosition()
+                self.Snek.make()
+                self.Score += 50
+                self.UpdateScore()
+                self.MouseCounter = 0
             if self.Snek.alive == False:
                 self.EndGame()
             pygame.display.update()
-
 
 if __name__ == '__main__':
     Game = Game()
